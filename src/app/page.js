@@ -1,95 +1,161 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
+import { useState, useEffect } from "react";
+
+// Redux
+import { useSelector, useDispatch } from 'react-redux'
+import { changeValue } from '../store/slice';
+
+// Components
+import PokemonCard from "@/components/PokemonCard";
+import DetailPage from "@/components/DetailPage";
+
+// ApiCalls
+import pokemonApi from "@/api/pokemonClass"; 
 
 export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
+  const defaultState = useSelector(state => state.currentPokemonState.value)  
+  const dispatch = useDispatch()
+ 
+  const [pagination, setPagination] = useState({
+    page: 0,
+    link: "https://pokeapi.co/api/v2/pokemon?offset=0&limit=20",
+    nextLink: "https://pokeapi.co/api/v2/pokemon?offset=20&limit=20",
+    previousLink: "",
+    pokemons: []
+  });
+  
+    
+  useEffect(() => {
+    callForPokemons('firstLoad'); 
+  }, []);
+  /*
+   * firstLoad/next/previous
+  */
+  const callForPokemons = async(method, onClickPage) => {
+    if (pagination.page == onClickPage) {
+      return;
+    };
+
+    const methods = {
+      firstLoad: pagination.link,
+      nextLink: pagination.nextLink,
+      previousLink: pagination.previousLink
+    }
+
+    try {
+      const pokemons = 
+        await pokemonApi.getAllPokemons(methods[method], onClickPage, pagination.page, method);
+      
+      let page = pagination.page
+      
+      if (method == 'previousLink') {
+        page = page - 1;
+      }
+
+      if (
+        method == 'firstLoad' ||
+        method == 'nextLink'
+      ) {
+        page = page + 1;
+      }
+      
+      if (onClickPage) {
+        page = onClickPage;
+      }
+
+      setPagination({
+        page: page,
+        nextLink: pokemons.nextLink,
+        previousLink: pokemons.previousLink,
+        pokemons: pokemons.pokemons
+      })
+
+    } catch (e) {
+      alert(e)
+    }
+  } 
+
+  const onChangePokemon = async(pokemon) => {
+    try {
+      const pokemonData = await pokemonApi.getCharacteristicts(pokemon.id, pokemon.abilities)
+      dispatch(changeValue({
+        ...pokemon,
+        ...pokemonData
+      }))
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  if (defaultState !== null) {
+    return <DetailPage pokemon={defaultState} onClose={() => dispatch(changeValue(null))}/>
+  };
+
+  const paginationNumber = () => {
+    const view = []
+    for (let i = 1; i <= 8; i++) {
+      const classPaginate = pagination.page == i ? "pagination-link is-current" : "pagination-link" 
+      view.push (              
+        <li key={"page_"+i}>
           <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            className={classPaginate}
+            aria-label={"Page_"+i}
+            aria-current="page"
+            onClick={() => callForPokemons("", i)}
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
+            {i}
           </a>
+        </li>
+      )
+    }
+    return view
+  }
+
+  return (
+    <div className="container p-2">
+      <div className="columns is-multiline mt-4">
+        {
+          pagination?.pokemons?.map((item, index) => {
+            const pokemon = item.data;
+            return (
+              <div
+                key={pokemon.id}
+                className="column is-3"
+              >
+                <PokemonCard
+                  name={pokemon.name}
+                  image={pokemon.sprites.front_default}
+                  types={pokemon.types}
+                  onClick={() => onChangePokemon(pokemon)}
+                />
+              </div>
+            )
+          })
+        }
+      </div>
+      <div className="columns">
+        <div className="column is-12">
+          <nav className="pagination" role="navigation" aria-label="pagination">
+            <button 
+              className="pagination-previous"
+              onClick={() => callForPokemons("previousLink")}
+              disabled={pagination.page == 1}
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => callForPokemons('nextLink')}
+              className="pagination-next"
+              disabled={pagination.page == 8}
+            >
+              Next page
+            </button>
+            <ul className="pagination-list">
+              {paginationNumber()}
+            </ul>
+          </nav>
         </div>
       </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
 }
