@@ -1,6 +1,5 @@
 // apiClass gestionaria los errores que son del servidor
 import axios from "axios"
-import {resolve} from "styled-jsx/css";
 /*
  * Gestiona los llamados al servidor
  * o los metodos relacionados a los pokemon
@@ -29,7 +28,15 @@ class pokemonApiClass {
           arrToResolve.push(axios.get(pokemon.url));
         }
 
-        const pokemonData = await Promise.all(arrToResolve);
+        let pokemonData = await Promise.all(arrToResolve);
+         
+        pokemonData = pokemonData.map((item) => {
+          delete item.request;
+          delete item.headers;
+          delete item.config;
+          return item;
+        })
+
         resolve({
           count: pokemons.count,
           nextLink: pokemons.next,

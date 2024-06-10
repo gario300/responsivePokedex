@@ -87,10 +87,6 @@ export default function Home() {
     }
   }
 
-  if (defaultState !== null) {
-    return <DetailPage pokemon={defaultState} onClose={() => dispatch(changeValue(null))}/>
-  };
-
   const paginationNumber = () => {
     const view = []
     for (let i = 1; i <= 8; i++) {
@@ -110,6 +106,10 @@ export default function Home() {
     }
     return view
   }
+
+  if (defaultState !== null) {
+    return <DetailPage pokemon={defaultState} onClose={() => dispatch(changeValue(null))}/>
+  };
 
   return (
     <div className="container p-2">
