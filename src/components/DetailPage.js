@@ -73,7 +73,7 @@ function DetailPage({pokemon, onClose}){
                 {
                   pokemon.abilities.map((ability, index) => {
                     return (
-                      <p key={"ability_"+ability.id}>
+                      <p key={"ability_"+ability.data.id+"_"+index}>
                         <strong>{ability.data.name}</strong>
                         <br/>
                         {ability.data.effect_entries[1].effect}

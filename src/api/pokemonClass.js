@@ -52,7 +52,12 @@ class pokemonApiClass {
         };
         let finalObj = {}
         let detailData = await Promise.all(arrDetails);
-        finalObj.abilities = detailData;
+        finalObj.abilities = detailData.map((item) => {
+          delete item.request;
+          delete item.headers;
+          delete item.config;
+          return item;
+        });
         resolve(finalObj)
       } catch (e) {
         reject(e)
