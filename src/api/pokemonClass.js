@@ -1,124 +1,79 @@
-// apiClass gestionaria los errores que son del servidor
-import axios from "axios"
-/*
- * Gestiona los llamados al servidor
- * o los metodos relacionados a los pokemon
-*/
-class pokemonApiClass {
-  getAllPokemons(link, onClickPage, page, method) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        let localLink = link;
-        if (onClickPage) { 
-          const currentPage = onClickPage - 1
-          localLink = 
-            `https://pokeapi.co/api/v2/pokemon?offset=${currentPage * 20}&limit=20`
-        }
-        let pokemons = await axios.get(localLink);
-        pokemons = pokemons.data;
-        if (
-          onClickPage == 8 ||
-          page == 7 && method == "nextLink"
-        ) {
-          pokemons.results = pokemons.results.splice(0, 11)
-        }
-        const arrToResolve = [];
-        
-        for (const pokemon of pokemons.results) {
-          arrToResolve.push(axios.get(pokemon.url));
-        }
+import axios from "axios";
 
-        let pokemonData = await Promise.all(arrToResolve);
-         
-        pokemonData = pokemonData.map((item) => {
-          delete item.request;
-          delete item.headers;
-          delete item.config;
-          return item;
-        })
-
-        resolve({
-          count: pokemons.count,
-          nextLink: pokemons.next,
-          previousLink: pokemons.previous,
-          pokemons: pokemonData,
-        })
-
-      } catch (e) {
-        console.log(e)
-         reject("Este es un error")
+class PokemonApiClass {
+  async getAllPokemons(link, onClickPage, page, method) {
+    try {
+      let localLink = link;
+      if (onClickPage) {
+        const currentPage = onClickPage - 1;
+        localLink = `https://pokeapi.co/api/v2/pokemon?offset=${currentPage * 20}&limit=20`;
       }
-    })
-  }
-  getCharacteristicts(id, habilityArr) {
-    return new Promise(async(resolve, reject) => {
-      try {
-        const arrDetails = [];
-        for (const hability of habilityArr) {
-          arrDetails.push(axios.get(hability.ability.url));
-        };
-        let finalObj = {}
-        let detailData = await Promise.all(arrDetails);
-        finalObj.abilities = detailData.map((item) => {
-          delete item.request;
-          delete item.headers;
-          delete item.config;
-          return item;
-        });
-        resolve(finalObj)
-      } catch (e) {
-        reject(e)
+      const { data: pokemons } = await axios.get(localLink);
+
+      if (onClickPage == 8 || (page == 7 && method == "nextLink")) {
+        pokemons.results = pokemons.results.slice(0, 11);
       }
-    })
-  }
-  asignateColorToType(type){
-    /*
-     * Esto pudo ser un objeto y usarlo por un enum pero escogí
-     * switch por si se me olvidaba algun tipo o lo escribía mal
-     * retorne el default
-    */
-    switch (type) {
-      case 'fire':
-        return '#E72324' 
-      case 'water':
-        return '#2881F0'
-      case 'bug':
-        return '#92A312'
-      case 'grass':
-        return '#3DA324'
-      case 'normal': 
-        return '#9FA19F'
-      case 'psychic':
-        return '#EF4179'
-      case 'fairy':
-        return '#EF71EF'
-      case 'rock':
-        return '#AFA981'
-      case 'ghost':
-        return '#704170'
-      case 'dragon':
-        return '#5061E1'
-      case 'steel':
-        return '#60A3BA'
-      case 'electric':
-        return '#FAC000'
-      case 'ice':
-        return '#3FD8FF'
-      case 'fighting':
-        return '#F98100'
-      case 'dark':
-        return '#50413F'
-      case 'ground':
-        return '#92501C'
-      case 'poison':
-        return '#933FCC'
-      case 'flying':
-        return '#81B9EF'
-      default:
-        return 'black'
+
+      const pokemonData = await Promise.all(
+        pokemons.results.map(pokemon => axios.get(pokemon.url))
+      );
+
+      const cleanData = pokemonData.map(({ data }) => data);
+
+      return {
+        count: pokemons.count,
+        nextLink: pokemons.next,
+        previousLink: pokemons.previous,
+        pokemons: cleanData,
+      };
+
+    } catch (e) {
+      console.error(e);
+      throw new Error("Error fetching Pokemon data");
     }
+  }
+
+  async getCharacteristicts(id, abilityArr) {
+    try {
+      const detailData = await Promise.all(
+        abilityArr.map(({ ability }) => axios.get(ability.url))
+      );
+
+      const cleanData = detailData.map(({ data }) => data);
+
+      return { abilities: cleanData };
+
+    } catch (e) {
+      console.error(e);
+      throw new Error("Error fetching Pokemon characteristics");
+    }
+  }
+
+  asignateColorToType(type) {
+    const typeColors = {
+      fire: '#E72324',
+      water: '#2881F0',
+      bug: '#92A312',
+      grass: '#3DA324',
+      normal: '#9FA19F',
+      psychic: '#EF4179',
+      fairy: '#EF71EF',
+      rock: '#AFA981',
+      ghost: '#704170',
+      dragon: '#5061E1',
+      steel: '#60A3BA',
+      electric: '#FAC000',
+      ice: '#3FD8FF',
+      fighting: '#F98100',
+      dark: '#50413F',
+      ground: '#92501C',
+      poison: '#933FCC',
+      flying: '#81B9EF',
+    };
+
+    return typeColors[type] || 'black';
   }
 }
 
-const pokemonApi = new pokemonApiClass();
+const pokemonApi = new PokemonApiClass();
 export default pokemonApi;
